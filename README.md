@@ -1,2 +1,1 @@
-# Algoritmos Otimização 5º Semestre
-Algoritimos de otimização para atividade de programação linear
+Só rodar o .exe em Win32/Debug
