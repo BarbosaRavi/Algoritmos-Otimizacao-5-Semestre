@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2025/09/16 20:40:44.000.308,=C:\Users\Ravi\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2025/09/16 20:51:25.000.328,C:\Users\Ravi\Documents\Embarcadero\Studio\Projects\Unit1.pas=C:\Users\Ravi\Desktop\Trab1LFernando\uMenu.pas</Transaction>
+    <Transaction>2025/09/16 20:51:25.000.328,C:\Users\Ravi\Documents\Embarcadero\Studio\Projects\Unit1.dfm=C:\Users\Ravi\Desktop\Trab1LFernando\uMenu.dfm</Transaction>
+    <Transaction>2025/09/16 20:51:45.000.830,C:\Users\Ravi\Documents\Embarcadero\Studio\Projects\Project1.dproj=C:\Users\Ravi\Desktop\Trab1LFernando\projProgLinear.dproj</Transaction>
+    <Transaction>2025/09/16 20:51:57.000.689,=C:\Users\Ravi\Desktop\Trab1LFernando\Unit2.pas</Transaction>
+    <Transaction>2025/09/16 20:56:37.000.084,C:\Users\Ravi\Desktop\Trab1LFernando\Unit2.pas=C:\Users\Ravi\Desktop\Trab1LFernando\uSobre.pas</Transaction>
+    <Transaction>2025/09/16 20:56:37.000.084,C:\Users\Ravi\Desktop\Trab1LFernando\Unit2.dfm=C:\Users\Ravi\Desktop\Trab1LFernando\uSobre.dfm</Transaction>
+    <Transaction>2025/09/16 21:30:23.000.729,=C:\Users\Ravi\Desktop\Trab1LFernando\Unit2.pas</Transaction>
+    <Transaction>2025/09/16 21:31:03.000.354,C:\Users\Ravi\Desktop\Trab1LFernando\uMetBas.dfm=C:\Users\Ravi\Desktop\Trab1LFernando\Unit2.dfm</Transaction>
+    <Transaction>2025/09/16 21:31:03.000.354,C:\Users\Ravi\Desktop\Trab1LFernando\uMetBas.pas=C:\Users\Ravi\Desktop\Trab1LFernando\Unit2.pas</Transaction>
+    <Transaction>2025/09/16 21:46:41.000.618,=C:\Users\Ravi\Desktop\Trab1LFernando\Unit1.pas</Transaction>
+    <Transaction>2025/09/16 21:46:50.000.531,C:\Users\Ravi\Desktop\Trab1LFernando\uFuncs.pas=C:\Users\Ravi\Desktop\Trab1LFernando\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>
