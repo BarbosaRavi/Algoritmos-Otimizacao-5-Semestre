@@ -1,0 +1,335 @@
+unit uMetBas;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, uFuncs, Vcl.ExtCtrls;
+
+type
+  TformMetBas = class(TForm)
+    lblTipoExec: TLabel;
+    cboxTipoExec: TComboBox;   // 0 = FIXO, 1 = ALEATÓRIO
+    lblTamProb: TLabel;
+    edtTamProb: TEdit;
+    btnSolInicial: TButton;
+    btnExec: TButton;
+    lblMetodo: TLabel;
+    cboxMetodo: TComboBox;      // 0=Subida de Encosta, 1=Subida c/ Tentativas, 2=Têmpera
+    lblAvisoFixo: TLabel;
+    memo: TMemo;
+    panelControles: TPanel;
+    memoMatriz: TMemo;
+    btnGerar: TButton;
+    lblTMax: TLabel;
+    edtTMax: TEdit;
+    lblTempIni: TLabel;
+    edtTempIni: TEdit;
+    lblTempFinal: TLabel;
+    edtTempFinal: TEdit;
+    lblRedutor: TLabel;
+    edtRedutor: TEdit;
+    procedure FormCreate(Sender: TObject);
+    procedure cboxTipoExecChange(Sender: TObject);
+    procedure btnSolInicialClick(Sender: TObject);
+    procedure btnExecClick(Sender: TObject);
+    procedure btnGerarClick(Sender: TObject);
+    procedure cboxMetodoClick(Sender: TObject);
+  private
+    FDist: TMatrizProblema;
+    FInic: TVetorRota;
+    FFixo: Boolean;
+    FN: Integer;
+    procedure PrepararInstancia;
+    procedure EscreverSolucaoInicialNoMemo;
+    procedure edtChange(Sender: TObject);
+  public
+  end;
+
+var
+  formMetBas: TformMetBas;
+
+implementation
+
+{$R *.dfm}
+
+//FormCreate
+procedure TformMetBas.FormCreate(Sender: TObject);
+begin
+  cboxTipoExec.ItemIndex := 0;
+  cboxMetodo.ItemIndex := 0;
+  FN := 6;
+  FFixo := True;
+  edtTamProb.Enabled:= False;
+
+  SetLength(FDist, 0);
+  SetLength(FInic, 0);
+
+  edtRedutor.OnChange:= edtChange;
+  edtTMax.OnChange:= edtChange;
+  edtTempIni.OnChange:= edtChange;
+  edtTempFinal.OnChange:= edtChange;
+  edtTamProb.OnChange:= edtChange;
+end;
+
+//Mudar Metodo
+procedure TformMetBas.cboxMetodoClick(Sender: TObject);
+begin
+  case cboxMetodo.ItemIndex of
+    0:
+      begin
+        lblTMax.Visible:= False;
+        lblTempIni.Visible:= False;
+        lblTempFinal.Visible:= False;
+        lblRedutor.Visible:= False;
+        edtTempIni.Visible:= False;
+        edtTempFinal.Visible:= False;
+        edtRedutor.Visible:= False;
+        edtTMax.Visible:= False;
+      end;
+    1:
+      begin
+        lblTMax.Visible:= True;
+        lblTempIni.Visible:= False;
+        lblTempFinal.Visible:= False;
+        lblRedutor.Visible:= False;
+        edtTempIni.Visible:= False;
+        edtTempFinal.Visible:= False;
+        edtRedutor.Visible:= False;
+        edtTMax.Visible:= True;
+
+      end;
+    2:
+      begin
+        lblTMax.Visible:= False;
+        lblTempIni.Visible:= True;
+        lblTempFinal.Visible:= True;
+        lblRedutor.Visible:= True;
+        edtTempIni.Visible:= True;
+        edtTempFinal.Visible:= True;
+        edtRedutor.Visible:= True;
+        edtTMax.Visible:= False;
+
+      end;
+  end;
+end;
+
+
+//Mudar tipo de execução para padrão ou aleatoria
+procedure TformMetBas.cboxTipoExecChange(Sender: TObject);
+begin
+  if cboxTipoExec.ItemIndex = 0 then
+  begin
+    edtTamProb.Enabled:= False;
+    edtTamProb.Text:= '6';
+  end
+  else
+    edtTamProb.Enabled:= True;
+end;
+
+procedure TformMetBas.edtChange(Sender: TObject);
+var
+  S, Novo: string;
+  I: Integer;
+  C: Char;
+  jaTemVirgula: Boolean;
+begin
+  // Edit que disparou o evento
+  S := TEdit(Sender).Text;
+  Novo := '';
+  jaTemVirgula := False;
+
+  for I := 1 to Length(S) do
+  begin
+    C := S[I];
+
+    // Aceita dígitos
+    if C in ['0'..'9'] then
+      Novo := Novo + C
+
+    // Aceita '.' ou ',' e transforma em ',' (apenas a primeira vez)
+    else if (C in ['.', ',']) and (not jaTemVirgula) then
+    begin
+      Novo := Novo + ',';
+      jaTemVirgula := True;
+    end;
+
+    // Qualquer outra coisa é ignorada
+  end;
+
+  // Se houve mudança, atualiza o texto e põe o cursor no fim
+  if S <> Novo then
+  begin
+    TEdit(Sender).Text := Novo;
+    TEdit(Sender).SelStart := Length(Novo);
+  end;
+end;
+
+
+//Prepara a Solução inicial
+procedure TformMetBas.PrepararInstancia;
+begin
+  FFixo := (cboxTipoExec.ItemIndex = 0);
+
+  if FFixo then
+    FN := 6
+  else
+  begin
+    if not TryStrToInt(Trim(edtTamProb.Text), FN) then
+      raise Exception.Create('Tamanho deve ser inteiro e maior que 3');
+    if FN < 3 then
+      raise Exception.Create('Tamanho mínimo é 3');
+  end;
+
+  FDist := gerarMatriz(FN, FFixo);
+  FInic := gerarSolInicial(FDist);
+end;
+
+//Procedure para exibir solução inicial
+procedure TformMetBas.EscreverSolucaoInicialNoMemo;
+var
+  ciclo: TVetorRota;
+  custo: Integer;
+  desc: string;
+begin
+  ciclo := seguirRota(FInic);
+
+  custo := avaliarRotaComString(FDist, ciclo, desc);
+
+  memo.Lines.Add(StringOfChar('-', 70));
+  if FFixo then
+    memo.Lines.Add(Format('Instância FIXA (N=%d)', [FN]))
+  else
+    memo.Lines.Add(Format('Instância ALEATÓRIA (N=%d)', [FN]));
+
+  memo.Lines.Add('Solução Inicial (vetor): ' + respToString(FInic));
+  memo.Lines.Add('Ciclo (fechado): ' + respToString(ciclo));
+
+  memo.Lines.Add('Caminho detalhado: ' + desc);
+
+  memo.Lines.Add('Distância (custo): ' + custo.ToString);
+end;
+
+procedure TformMetBas.btnGerarClick(Sender: TObject);
+begin
+  memoMatriz.Clear;
+  PrepararInstancia;
+  memoMatriz.Lines.Add(MatrizToString(FDist));
+end;
+
+procedure TformMetBas.btnSolInicialClick(Sender: TObject);
+begin
+  memo.Clear;
+  EscreverSolucaoInicialNoMemo;
+end;
+
+//Executar
+procedure TformMetBas.btnExecClick(Sender: TObject);
+var
+  melhor: TVetorRota;
+  cicloIni, cicloFim: TVetorRota;
+  descIni, descFim: string;
+  custoIni, melhorCusto: Integer;
+  tentMax: Integer;
+  tempIni, tempFim, fatorRed: Double;
+begin
+  memo.Clear;
+
+  // 1) Verifica se a matriz já foi gerada pelo botão "Gerar"
+  if Length(FDist) = 0 then
+  begin
+    ShowMessage('Gere a matriz primeiro (botão "Gerar").');
+    Exit;
+  end;
+
+  // 2) Garante que tem solução inicial para essa matriz
+  if Length(FInic) = 0 then
+    FInic := gerarSolInicial(FDist);
+
+  // 3) Detalha a SOLUÇÃO INICIAL (igual ao EscreverSolucaoInicialNoMemo)
+  cicloIni := seguirRota(FInic);
+  custoIni := avaliarRotaComString(FDist, cicloIni, descIni);
+
+  memo.Lines.Add(StringOfChar('-', 70));
+  if FFixo then
+    memo.Lines.Add(Format('Instância FIXA (N=%d)', [FN]))
+  else
+    memo.Lines.Add(Format('Instância ALEATÓRIA (N=%d)', [FN]));
+
+  memo.Lines.Add('*** SOLUÇÃO INICIAL ***');
+  memo.Lines.Add('Solução Inicial (vetor): ' + respToString(FInic));
+  memo.Lines.Add('Ciclo (fechado):        ' + respToString(cicloIni));
+  memo.Lines.Add('Caminho detalhado:      ' + descIni);
+  memo.Lines.Add('Distância (custo):      ' + custoIni.ToString);
+  memo.Lines.Add('');
+
+  // 4) Escolhe o método de acordo com o cboxMetodo
+  try
+    case cboxMetodo.ItemIndex of
+      // 0 = Subida de Encosta
+      0:
+        begin
+          memo.Lines.Add('Método selecionado: Subida de Encosta');
+          melhor := SubidaEncosta(FDist, FInic, melhorCusto);
+        end;
+
+      // 1 = Subida de Encosta com Tentativas
+      1:
+        begin
+          if not TryStrToInt(Trim(edtTMax.Text), tentMax) or (tentMax <= 0) then
+            raise Exception.Create('Informe um inteiro positivo em TMax.');
+
+          memo.Lines.Add(Format('Método selecionado: Subida de Encosta c/ Tentativas (TMax = %d)', [tentMax]));
+          melhor := SubidaEncostaTentativas(FDist, FInic, tentMax, melhorCusto);
+        end;
+
+      // 2 = Têmpera Simulada
+      2:
+        begin
+          if not TryStrToFloat(Trim(edtTempIni.Text), tempIni) then
+            raise Exception.Create('Temperatura inicial inválida.');
+          if not TryStrToFloat(Trim(edtTempFinal.Text), tempFim) then
+            raise Exception.Create('Temperatura final inválida.');
+          if not TryStrToFloat(Trim(edtRedutor.Text), fatorRed) then
+            raise Exception.Create('Fator redutor inválido.');
+
+          if (tempIni <= 0) or (tempFim <= 0) or (tempIni <= tempFim) then
+            raise Exception.Create('Use Temp. inicial > Temp. final, ambas > 0.');
+          if (fatorRed <= 0) or (fatorRed >= 1) then
+            raise Exception.Create('Fator redutor deve estar entre 0 e 1 (ex: 0,95).');
+
+          memo.Lines.Add(Format(
+            'Método selecionado: Têmpera Simulada (Tini=%.2f, Tfim=%.2f, Redutor=%.4f)',
+            [tempIni, tempFim, fatorRed]
+          ));
+
+          melhor := TemperaSimulada(FDist, FInic, tempIni, tempFim, fatorRed, melhorCusto);
+        end;
+
+    else
+      raise Exception.Create('Selecione um método na lista.');
+    end;
+  except
+    on E: Exception do
+    begin
+      ShowMessage(E.Message);
+      Exit;
+    end;
+  end;
+
+  memo.Lines.Add('');
+  memo.Lines.Add('*** SOLUÇÃO FINAL ***');
+
+  // 5) Detalha a SOLUÇÃO FINAL do mesmo jeito que a inicial
+  cicloFim := seguirRota(melhor);
+  avaliarRotaComString(FDist, cicloFim, descFim);
+
+  memo.Lines.Add('Solução Final (vetor): ' + respToString(melhor));
+  memo.Lines.Add('Ciclo (fechado):       ' + respToString(cicloFim));
+  memo.Lines.Add('Caminho detalhado:     ' + descFim);
+  memo.Lines.Add(Format('Custo inicial: %d', [custoIni]));
+  memo.Lines.Add(Format('Custo final:   %d', [melhorCusto]));
+end;
+
+end.
+

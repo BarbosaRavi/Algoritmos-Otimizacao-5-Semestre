@@ -3,8 +3,8 @@ object formMetBas: TformMetBas
   Top = 0
   BorderStyle = bsToolWindow
   Caption = 'M'#233'todos B'#225'sicos'
-  ClientHeight = 441
-  ClientWidth = 422
+  ClientHeight = 534
+  ClientWidth = 684
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,93 +14,183 @@ object formMetBas: TformMetBas
   Position = poScreenCenter
   OnCreate = FormCreate
   TextHeight = 15
-  object lblTipoExec: TLabel
-    Left = 8
-    Top = 24
-    Width = 95
-    Height = 15
-    Caption = 'Tipo de Execu'#231#227'o:'
-  end
-  object lblTamProb: TLabel
-    Left = 8
-    Top = 69
-    Width = 124
-    Height = 15
-    Caption = 'Tamanho do problema:'
-  end
-  object lblMetodo: TLabel
-    Left = 79
-    Top = 100
-    Width = 45
-    Height = 15
-    Caption = 'M'#233'todo:'
-  end
-  object lblAvisoFixo: TLabel
-    Left = 263
-    Top = 8
-    Width = 151
-    Height = 15
-    Caption = '*Manter tamanho 6 para fixo'
-  end
-  object cboxTipoExec: TComboBox
-    Left = 109
-    Top = 21
-    Width = 108
-    Height = 23
-    ItemIndex = 0
-    TabOrder = 0
-    Text = 'Fixo'
-    OnChange = cboxTipoExecChange
-    Items.Strings = (
-      'Fixo'
-      'Aleat'#243'rio')
-  end
-  object edtTamProb: TEdit
-    Left = 138
-    Top = 61
-    Width = 79
-    Height = 23
-    NumbersOnly = True
-    TabOrder = 1
-    Text = '6'
-  end
-  object btnSolInicial: TButton
-    Left = 8
-    Top = 96
-    Width = 65
-    Height = 25
-    Caption = 'Sol. Inicial'
-    TabOrder = 2
-    OnClick = btnSolInicialClick
-  end
-  object btnExec: TButton
-    Left = 348
-    Top = 96
-    Width = 65
-    Height = 25
-    Caption = 'Executar'
-    TabOrder = 3
-    OnClick = btnExecClick
-  end
-  object ComboBox1: TComboBox
-    Left = 130
-    Top = 90
-    Width = 212
-    Height = 23
-    ItemIndex = 0
-    TabOrder = 4
-    Text = 'Subida de Encosta'
-    Items.Strings = (
-      'Subida de Encosta'
-      'Subida de Encosta com Tentativas'
-      'T'#234'mpera Simulada')
-  end
   object memo: TMemo
-    Left = 8
-    Top = 136
-    Width = 406
-    Height = 297
+    Left = 0
+    Top = 313
+    Width = 683
+    Height = 216
     ReadOnly = True
-    TabOrder = 5
+    ScrollBars = ssBoth
+    TabOrder = 0
+  end
+  object panelControles: TPanel
+    Left = -1
+    Top = -1
+    Width = 682
+    Height = 314
+    TabOrder = 1
+    object lblAvisoFixo: TLabel
+      Left = 6
+      Top = 7
+      Width = 152
+      Height = 15
+      Caption = '*Manter tamanho 6 para fixo'
+    end
+    object lblTamProb: TLabel
+      Left = 6
+      Top = 92
+      Width = 123
+      Height = 15
+      Caption = 'Tamanho do problema:'
+    end
+    object lblTipoExec: TLabel
+      Left = 7
+      Top = 51
+      Width = 95
+      Height = 15
+      Caption = 'Tipo de Execu'#231#227'o:'
+    end
+    object lblMetodo: TLabel
+      Left = 6
+      Top = 140
+      Width = 45
+      Height = 15
+      Caption = 'M'#233'todo:'
+    end
+    object lblTMax: TLabel
+      Left = 7
+      Top = 182
+      Width = 81
+      Height = 15
+      Caption = 'Tentativas Max:'
+      Visible = False
+    end
+    object lblTempIni: TLabel
+      Left = 6
+      Top = 182
+      Width = 103
+      Height = 15
+      Caption = 'Temperatura Inicial:'
+      Visible = False
+    end
+    object lblTempFinal: TLabel
+      Left = 7
+      Top = 210
+      Width = 97
+      Height = 15
+      Caption = 'Temperatura Final:'
+      Visible = False
+    end
+    object lblRedutor: TLabel
+      Left = 7
+      Top = 234
+      Width = 75
+      Height = 15
+      Caption = 'Fator Redutor:'
+      Visible = False
+    end
+    object cboxMetodo: TComboBox
+      Left = 57
+      Top = 137
+      Width = 212
+      Height = 23
+      ItemIndex = 0
+      TabOrder = 0
+      Text = 'Subida de Encosta'
+      OnClick = cboxMetodoClick
+      Items.Strings = (
+        'Subida de Encosta'
+        'Subida de Encosta com Tentativas'
+        'T'#234'mpera Simulada')
+    end
+    object edtTamProb: TEdit
+      Left = 136
+      Top = 89
+      Width = 79
+      Height = 23
+      TabOrder = 1
+      Text = '6'
+    end
+    object cboxTipoExec: TComboBox
+      Left = 108
+      Top = 48
+      Width = 108
+      Height = 23
+      ItemIndex = 0
+      TabOrder = 2
+      Text = 'Fixo'
+      OnChange = cboxTipoExecChange
+      Items.Strings = (
+        'Fixo'
+        'Aleat'#243'rio')
+    end
+    object btnSolInicial: TButton
+      Left = 272
+      Top = 57
+      Width = 65
+      Height = 25
+      Caption = 'Sol. Inicial'
+      TabOrder = 3
+      OnClick = btnSolInicialClick
+    end
+    object btnExec: TButton
+      Left = 272
+      Top = 89
+      Width = 65
+      Height = 25
+      Caption = 'Executar'
+      TabOrder = 4
+      OnClick = btnExecClick
+    end
+    object memoMatriz: TMemo
+      Left = 374
+      Top = 2
+      Width = 310
+      Height = 310
+      ReadOnly = True
+      ScrollBars = ssBoth
+      TabOrder = 5
+    end
+    object btnGerar: TButton
+      Left = 267
+      Top = 24
+      Width = 75
+      Height = 25
+      Caption = 'Gerar Matriz'
+      TabOrder = 6
+      OnClick = btnGerarClick
+    end
+    object edtTMax: TEdit
+      Left = 93
+      Top = 179
+      Width = 79
+      Height = 23
+      TabOrder = 7
+      Visible = False
+    end
+    object edtTempIni: TEdit
+      Left = 115
+      Top = 179
+      Width = 79
+      Height = 23
+      TabOrder = 8
+      Visible = False
+    end
+    object edtTempFinal: TEdit
+      Left = 115
+      Top = 207
+      Width = 79
+      Height = 23
+      TabOrder = 9
+      Visible = False
+    end
+    object edtRedutor: TEdit
+      Left = 115
+      Top = 234
+      Width = 79
+      Height = 23
+      TabOrder = 10
+      Visible = False
+    end
   end
 end

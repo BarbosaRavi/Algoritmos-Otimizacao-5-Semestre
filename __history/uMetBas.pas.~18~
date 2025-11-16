@@ -1,0 +1,193 @@
+unit uMetBas;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, uFuncs, Vcl.ExtCtrls;
+
+type
+  TformMetBas = class(TForm)
+    lblTipoExec: TLabel;
+    cboxTipoExec: TComboBox;   // 0 = FIXO, 1 = ALEATÓRIO
+    lblTamProb: TLabel;
+    edtTamProb: TEdit;
+    btnSolInicial: TButton;
+    btnExec: TButton;
+    lblMetodo: TLabel;
+    cboxMetodo: TComboBox;      // 0=Subida de Encosta, 1=Subida c/ Tentativas, 2=Têmpera
+    lblAvisoFixo: TLabel;
+    memo: TMemo;
+    panelControles: TPanel;
+    memoMatriz: TMemo;
+    btnGerar: TButton;
+    lblTMax: TLabel;
+    edtTMax: TEdit;
+    lblTempIni: TLabel;
+    edtTempIni: TEdit;
+    lblTempFinal: TLabel;
+    edtTempFinal: TEdit;
+    lblRedutor: TLabel;
+    edtRedutor: TEdit;
+    procedure FormCreate(Sender: TObject);
+    procedure cboxTipoExecChange(Sender: TObject);
+    procedure btnSolInicialClick(Sender: TObject);
+    procedure btnExecClick(Sender: TObject);
+    procedure btnGerarClick(Sender: TObject);
+    procedure edtTMaxChange(Sender: TObject);
+    procedure cboxMetodoClick(Sender: TObject);
+  private
+    FDist: TMatrizProblema;
+    FInic: TVetorRota;
+    FFixo: Boolean;
+    FN: Integer;
+    procedure PrepararInstancia;
+    procedure EscreverSolucaoInicialNoMemo;
+  public
+  end;
+
+var
+  formMetBas: TformMetBas;
+
+implementation
+
+{$R *.dfm}
+
+//FormCreate
+procedure TformMetBas.FormCreate(Sender: TObject);
+begin
+  cboxTipoExec.ItemIndex := 0;
+  cboxMetodo.ItemIndex := 0;
+  FN := 6;
+  FFixo := True;
+  edtTamProb.Enabled:= False;
+
+  SetLength(FDist, 0);
+  SetLength(FInic, 0);
+end;
+
+//Mudar Metodo
+procedure TformMetBas.cboxMetodoClick(Sender: TObject);
+begin
+  case cboxMetodo.ItemIndex of
+    0:
+      begin
+        lblTMax.Visible:= False;
+        lblTempIni.Visible:= False;
+        lblTempFinal.Visible:= False;
+        lblRedutor.Visible:= False;
+        edtTempIni.Visible:= False;
+        edtTempFinal.Visible:= False;
+        edtRedutor.Visible:= False;
+        edtTMax.Visible:= False;
+      end;
+    1:
+      begin
+        lblTMax.Visible:= True;
+        lblTempIni.Visible:= False;
+        lblTempFinal.Visible:= False;
+        lblRedutor.Visible:= False;
+        edtTempIni.Visible:= False;
+        edtTempFinal.Visible:= False;
+        edtRedutor.Visible:= False;
+        edtTMax.Visible:= True;
+
+      end;
+    2:
+      begin
+        lblTMax.Visible:= False;
+        lblTempIni.Visible:= True;
+        lblTempFinal.Visible:= True;
+        lblRedutor.Visible:= True;
+        edtTempIni.Visible:= True;
+        edtTempFinal.Visible:= True;
+        edtRedutor.Visible:= True;
+        edtTMax.Visible:= False;
+
+      end;
+  end;
+end;
+
+
+//Mudar tipo de execução para padrão ou aleatoria
+procedure TformMetBas.cboxTipoExecChange(Sender: TObject);
+begin
+  if cboxTipoExec.ItemIndex = 0 then
+  begin
+    edtTamProb.Enabled:= False;
+    edtTamProb.Text:= '6';
+  end
+  else
+    edtTamProb.Enabled:= True;
+end;
+
+procedure TformMetBas.edtTMaxChange(Sender: TObject);
+begin
+
+end;
+
+//Prepara a Solução inicial
+procedure TformMetBas.PrepararInstancia;
+begin
+  FFixo := (cboxTipoExec.ItemIndex = 0);
+
+  if FFixo then
+    FN := 6
+  else
+  begin
+    if not TryStrToInt(Trim(edtTamProb.Text), FN) then
+      raise Exception.Create('Tamanho deve ser inteiro e maior que 3');
+    if FN < 3 then
+      raise Exception.Create('Tamanho mínimo é 3');
+  end;
+
+  FDist := gerarMatriz(FN, FFixo);
+  FInic := gerarSolInicial(FDist);
+end;
+
+//Procedure para exibir solução inicial
+procedure TformMetBas.EscreverSolucaoInicialNoMemo;
+var
+  ciclo: TVetorRota;
+  custo: Integer;
+  desc: string;
+begin
+  ciclo := seguirRota(FInic);
+
+  custo := avaliarRotaComString(FDist, ciclo, desc);
+
+  memo.Lines.Add(StringOfChar('-', 70));
+  if FFixo then
+    memo.Lines.Add(Format('Instância FIXA (N=%d)', [FN]))
+  else
+    memo.Lines.Add(Format('Instância ALEATÓRIA (N=%d)', [FN]));
+
+  memo.Lines.Add('Solução Inicial (vetor): ' + respToString(FInic));
+  memo.Lines.Add('Ciclo (fechado): ' + respToString(ciclo));
+
+  memo.Lines.Add('Caminho detalhado: ' + desc);
+
+  memo.Lines.Add('Distância (custo): ' + custo.ToString);
+end;
+
+procedure TformMetBas.btnGerarClick(Sender: TObject);
+begin
+  memoMatriz.Clear;
+  PrepararInstancia;
+  memoMatriz.Lines.Add(MatrizToString(FDist));
+end;
+
+procedure TformMetBas.btnSolInicialClick(Sender: TObject);
+begin
+  memo.Clear;
+  EscreverSolucaoInicialNoMemo;
+end;
+
+//Executar
+procedure TformMetBas.btnExecClick(Sender: TObject);
+begin
+  memo.Clear;
+end;
+
+end.
+

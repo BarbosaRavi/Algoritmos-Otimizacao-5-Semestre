@@ -3,7 +3,7 @@ unit uFuncs;
 interface
 
 uses
-  System.SysUtils, System.Math;
+  System.SysUtils, Vcl.Controls, Vcl.StdCtrls;
 
 type
   TMatrizProblema = TArray<TArray<Integer>>;
@@ -13,11 +13,222 @@ function gerarMatriz(const N: Integer; const fixo: Boolean): TMatrizProblema;
 function gerarSolInicial(const D: TMatrizProblema): TVetorRota;
 function seguirRota(const R: TVetorRota): TVetorRota;
 function avaliarRota(const D: TMatrizProblema; const ciclo: TVetorRota): Integer;
+function avaliarRotaComString(const D: TMatrizProblema;const ciclo: TVetorRota;out descricao: string): Integer;
 function respToString(const R: TVetorRota): string;
 function MatrizToString(const D: TMatrizProblema): string;
+function AvaliarPermutacao(const D: TMatrizProblema; const R: TVetorRota): Integer;
+procedure TrocarPosicoes(var R: TVetorRota; i, j: Integer);
+function GerarVizinhoAleatorio(const R: TVetorRota): TVetorRota;
+function SubidaEncosta(const D: TMatrizProblema;const Inicial: TVetorRota; out melhorCusto: Integer): TVetorRota;
+function SubidaEncostaTentativas(const D: TMatrizProblema;const Inicial: TVetorRota; tentMax: Integer;out melhorCusto: Integer): TVetorRota;
+function TemperaSimulada(const D: TMatrizProblema;const Inicial: TVetorRota; tempIni, tempFim, fatorRed: Double;out melhorCusto: Integer): TVetorRota;
+function EmbaralharRotaAPartir(const R: TVetorRota): TVetorRota;
 
 
 implementation
+
+function EmbaralharRotaAPartir(const R: TVetorRota): TVetorRota;
+var
+  N, i, j: Integer;
+begin
+  Result := Copy(R);
+  N := Length(Result);
+
+  // embaralha apenas posições 1..N-1 para manter cidade 0 fixa
+  for i := N - 1 downto 1 do
+  begin
+    j := 1 + Random(i); // entre 1 e i
+    TrocarPosicoes(Result, i, j);
+  end;
+end;
+
+
+function AvaliarPermutacao(const D: TMatrizProblema; const R: TVetorRota): Integer;
+var
+  ciclo: TVetorRota;
+begin
+  ciclo := seguirRota(R);
+  Result := avaliarRota(D, ciclo);
+end;
+
+procedure TrocarPosicoes(var R: TVetorRota; i, j: Integer);
+var
+  aux: Integer;
+begin
+  aux := R[i];
+  R[i] := R[j];
+  R[j] := aux;
+end;
+
+function GerarVizinhoAleatorio(const R: TVetorRota): TVetorRota;
+var
+  i, j, N: Integer;
+begin
+  Result := Copy(R);
+  N := Length(Result);
+
+  if N <= 2 then
+    Exit;
+
+  repeat
+    i := 1 + Random(N - 1);
+    j := 1 + Random(N - 1);
+  until i <> j;
+
+  TrocarPosicoes(Result, i, j);
+end;
+
+function SubidaEncosta(const D: TMatrizProblema;const Inicial: TVetorRota; out melhorCusto: Integer): TVetorRota;
+var
+  atual, melhorLocal, vizinho: TVetorRota;
+  custoAtual, custoVizinho, melhorVizinho: Integer;
+  i, j, N: Integer;
+  melhorou: Boolean;
+begin
+  atual := Copy(Inicial);
+  N := Length(atual);
+
+  custoAtual := AvaliarPermutacao(D, atual);
+
+  repeat
+    melhorou := False;
+    melhorVizinho := custoAtual;
+    melhorLocal := atual;
+
+    // gera TODOS os vizinhos por troca (swap) de duas posições da rota
+    for i := 1 to N - 2 do
+      for j := i + 1 to N - 1 do
+      begin
+        vizinho := Copy(atual);
+        TrocarPosicoes(vizinho, i, j);
+        custoVizinho := AvaliarPermutacao(D, vizinho);
+
+        if custoVizinho < melhorVizinho then
+        begin
+          melhorVizinho := custoVizinho;
+          melhorLocal := vizinho;
+          melhorou := True;
+        end;
+      end;
+
+    if melhorou then
+    begin
+      atual := melhorLocal;
+      custoAtual := melhorVizinho;
+    end;
+  until not melhorou;
+
+  Result := atual;
+  melhorCusto := custoAtual;
+end;
+
+
+function SubidaEncostaTentativas(const D: TMatrizProblema;
+  const Inicial: TVetorRota; tentMax: Integer;
+  out melhorCusto: Integer): TVetorRota;
+var
+  melhorGlobal, rotaBase, tentativa, resultado: TVetorRota;
+  custoTmp: Integer;
+  t: Integer;
+begin
+  // 1) Primeiro: subida de encosta "normal" a partir da solução inicial
+  resultado := SubidaEncosta(D, Inicial, melhorCusto);
+  melhorGlobal := resultado;
+
+  // 2) Faz tentMax recomeços aleatórios
+  for t := 1 to tentMax do
+  begin
+    // pega a solução inicial e embaralha um pouco
+    rotaBase := EmbaralharRotaAPartir(Inicial);
+
+    // aplica subida de encosta a partir dessa rota embaralhada
+    tentativa := SubidaEncosta(D, rotaBase, custoTmp);
+
+    // se essa tentativa for melhor que a melhor até agora, guarda
+    if custoTmp < melhorCusto then
+    begin
+      melhorCusto := custoTmp;
+      melhorGlobal := tentativa;
+    end;
+  end;
+
+  Result := melhorGlobal;
+end;
+
+function TemperaSimulada(const D: TMatrizProblema;
+  const Inicial: TVetorRota; tempIni, tempFim, fatorRed: Double;
+  out melhorCusto: Integer): TVetorRota;
+var
+  atual, melhorGlobal, vizinho: TVetorRota;
+  custoAtual, custoVizinho, delta: Integer;
+  T: Double;
+  iter, maxIter: Integer;
+begin
+  // começa a partir de uma versão embaralhada da solução inicial
+  atual := EmbaralharRotaAPartir(Inicial);
+  melhorGlobal := atual;
+
+  custoAtual := AvaliarPermutacao(D, atual);
+  melhorCusto := custoAtual;
+
+  T := tempIni;
+  maxIter := Length(atual) * 5;
+
+  while T > tempFim do
+  begin
+    for iter := 1 to maxIter do
+    begin
+      vizinho := GerarVizinhoAleatorio(atual);
+      custoVizinho := AvaliarPermutacao(D, vizinho);
+      delta := custoVizinho - custoAtual;
+
+      if (delta < 0) or (Exp(-delta / T) > Random) then
+      begin
+        atual := vizinho;
+        custoAtual := custoVizinho;
+
+        if custoAtual < melhorCusto then
+        begin
+          melhorCusto := custoAtual;
+          melhorGlobal := atual;
+        end;
+      end;
+    end;
+
+    T := T * fatorRed;
+  end;
+
+  Result := melhorGlobal;
+end;
+
+function avaliarRotaComString(const D: TMatrizProblema;const ciclo: TVetorRota;out descricao: string): Integer;
+var
+  s, i, custo: Integer;
+begin
+  s := 0;
+  descricao := '';
+
+  for i := 0 to High(ciclo) - 1 do
+  begin
+    custo := D[ciclo[i], ciclo[i + 1]];
+
+    if i > 0 then
+      descricao := descricao + ' + ';
+
+    descricao := descricao
+      + ciclo[i].ToString
+      + ' -> '
+      + ciclo[i + 1].ToString
+      + ' (' + custo.ToString + ')';
+
+    Inc(s, custo);
+  end;
+
+  // adiciona o total no final
+  descricao := descricao + ' = ' + s.ToString;
+  Result := s;
+end;
+
 
 // Gera matriz do problema
 function gerarMatriz(const N: Integer; const fixo: Boolean): TMatrizProblema;
@@ -26,6 +237,7 @@ var
 begin
   SetLength(Result, N, N);
 
+  // instância fixa 6x6
   if fixo and (N = 6) then
   begin
     Result[0] := [0, 14, 7,  8,  12, 6];
@@ -37,10 +249,7 @@ begin
     Exit;
   end;
 
-  if fixo then
-    RandSeed := 1234
-  else
-    Randomize;
+  // NÃO dá Randomize aqui
 
   for i := 0 to N - 1 do
     for j := 0 to N - 1 do
@@ -52,7 +261,9 @@ begin
         Result[i, j] := 2 + Random(49);
 end;
 
+
 //Gera solução inicial
+
 function gerarSolInicial(const D: TMatrizProblema): TVetorRota;
 var
   N, cur, prox, melhorj, melhord, i: Integer;
